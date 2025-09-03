@@ -1,5 +1,7 @@
 package com.williamnguyen;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -55,6 +57,24 @@ public class GameplayScreen implements Screen {
         gameBoard = new GameBoard(this);
     }
 
+    
+    private void handleMouseClick() {
+        //If Left click, fire one-time per click
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            System.out.println("left click at (" + Gdx.input.getX() + ", " + Gdx.input.getY());
+            System.out.println(gameBoard.getTileAt(Gdx.input.getX(), Gdx.input.getY()));
+            gameBoard.handleLeftClick(Gdx.input.getX(), Gdx.input.getY());
+        }
+        //if right click, fire one-time per click
+        if(Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT)) {
+            System.out.println("right click at (" + Gdx.input.getX() + ", " + Gdx.input.getY());
+            System.out.println(gameBoard.getTileAt(Gdx.input.getX(), Gdx.input.getY()));
+            gameBoard.handleRightClick(Gdx.input.getX(), Gdx.input.getY());
+        }
+    }
+    
+    
+
     /*
      * This method runs as fast as it can(or a set FPS)
      * repeatedly, constantly looped
@@ -67,6 +87,7 @@ public class GameplayScreen implements Screen {
     public void render(float delta) {
 
         //get player input
+        handleMouseClick();
 
         //process player input, A.I.
 

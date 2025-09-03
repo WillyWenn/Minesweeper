@@ -1,5 +1,6 @@
 package com.williamnguyen;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
@@ -24,6 +25,7 @@ public class GameBoard {
     private Texture bombTile;
     private Texture flagTile;
 
+
     public GameBoard(GameplayScreen gameScreen) {
         this.gameScreen = gameScreen;
         board = new int[16][30];
@@ -31,6 +33,7 @@ public class GameBoard {
         numFlags = numBombs;
         loadGraphics();
         addBombs();
+        initBoardNumbers();
     }
 
     public GameBoard(GameplayScreen gameScreen, int numRows, int numCols, int numBombs) {
@@ -40,6 +43,7 @@ public class GameBoard {
         this.numFlags = this.numBombs;
         loadGraphics();
         addBombs();
+        initBoardNumbers();
     }
 
     public void loadGraphics() {
@@ -92,28 +96,90 @@ public class GameBoard {
     public void initBoardNumbers() {
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[0].length; col++) {
-                if (board[row][col] != BOMB) {
-                    int bombCount = 0;
-                    for (int neighborRowOffset = -1; neighborRowOffset <= 1; neighborRowOffset++) {
-                        for (int neighborColOffset = -1; neighborColOffset <= 1; neighborColOffset++) {
-                            if (!(neighborRowOffset == 0 && neighborColOffset == 0)) {
-                                int neighborRow = row + neighborRowOffset;
-                                int neighborCol = col + neighborColOffset;
-                                if (neighborRow >= 0 && neighborRow < board.length && neighborCol >= 0 && neighborCol < board[0].length) {
-                                    if (board[neighborRow][neighborCol] == BOMB) bombCount++;
-                                }
-                            }
-                        }
-                    }
+                Location loc = new Location(row, col);
+                if (isValid(loc) && getValueOnBoard(loc) != BOMB) {
+                    int bombCount = getBombCount(loc);
                     if (bombCount == 0) {
-                        board[row][col] = 10; // empty floor
-                    } else {
+                        board[row][col] = 0; // empty floor
+                    } 
+                    else {
                         board[row][col] = 10 + bombCount; // 11 for 1 bomb, 12 for 2 bombs, etc.
                     }
                 }
             }
         }
     }
+
+    public boolean isValid(Location loc) {
+        return loc.getRow() >= 0 && loc.getRow() < board.length &&
+                loc.getCol() >= 0 && loc.getCol() < board[0].length;
+    }
+
+    // Returns the value at the given location on the board
+    public int getValueOnBoard(Location loc) {
+        if (isValid(loc)) {
+            return board[loc.getRow()][loc.getCol()];
+        }
+        return Integer.MIN_VALUE; // or any value to indicate invalid location
+    }
+
+    //loc doesn't contain a bomb
+    public int getBombCount(Location loc) {
+        int count = 0;
+        for(int row = loc.getRow()-1; row <= loc.getRow()+1; row++) {
+            for(int col= loc.getCol()-1; col <= loc.getCol()+1; col++) {
+                Location current = new Location(row,col);
+                if(isValid(current)) {
+                    int value = getValueOnBoard(current);
+                    if(value == BOMB) {
+                        count++;
+                    }
+                }
+            }
+        }
+        return count;
+    }
+    
+
+    //return the location on the gameboard 
+    //corresponding to to a give (mouseX,mouseY position).
+    //return null or if position isn't on gameboard
+    public Location getTileAt(int mouseX, int mouseY) {
+        int col = (mouseX-100) / 25;
+        int row = (mouseY-200) / 25;
+        Location loc = new Location(row, col);
+        if(isValid(loc)) {
+            return loc;
+        }
+        return null;
+        
+        
+     }
+     
+    public void handleLeftClick(int mouseX, int mouseY) {
+        Location loc = getTileAt(mouseX, mouseY);
+        if(loc != null) {
+            System.out.println("Handling left click");
+            if(board[loc.getRow()][loc.getCol()] < 9) {
+                board[loc.getRow()][loc.getCol()] += 10;
+            }
+        }
+    }
+
+    public void handleRightClick(int mouseX, int mouseY) {
+        Location loc = getTileAt(mouseX, mouseY);
+        if(loc != null) {
+            System.out.println("Handling right click");
+            if(board[loc.getRow()][loc.getCol()] < 9) {
+                board[loc.getRow()][loc.getCol()] += 20;
+            }
+        }
+    }
+
+        
+
+
+
 
     public void draw(SpriteBatch spriteBatch) {
         int yOffset = 500;
@@ -126,10 +192,12 @@ public class GameBoard {
                 if(board[numRows][numCols] == 9) {
                     spriteBatch.draw(bombTile, xOffset + numCols*25, yOffset - numRows*25);
                 }
-                //temporarilty draw bombs on the screen to know that its placed correctly
+                /*
+                temporarilty draw bombs on the screen to know that its placed correctly
                 else if(board[numRows][numCols] == -1) {
                     spriteBatch.draw(bombTile, xOffset + numCols*25, yOffset - numRows*25);
                 }
+                */
                 else if(board[numRows][numCols] == 10) {
                     spriteBatch.draw(emptyFloorTile, xOffset + numCols*25, yOffset - numRows*25);
                 }
@@ -158,7 +226,7 @@ public class GameBoard {
                     spriteBatch.draw(eightTile, xOffset + numCols*25, yOffset - numRows*25);
                 }
                 //+20 to indicate flag tile
-                else if(board[numRows][numCols] == 19 && board[numRows][numCols] <= 28) {
+                else if(board[numRows][numCols] >= 19 && board[numRows][numCols] <= 28) {
                     spriteBatch.draw(flagTile, xOffset + numCols*25, yOffset - numRows*25);
                 }
                 //if it is less than 9, than it is an covered tile
